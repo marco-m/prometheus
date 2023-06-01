@@ -121,16 +121,16 @@ type SDConfig struct {
 	Username     string        `yaml:"username,omitempty"`
 	Password     config.Secret `yaml:"password,omitempty"`
 
-	// See https://www.consul.io/docs/internals/consensus.html#consistency-modes,
+	// See https://developer.hashicorp.com/consul/docs/architecture/consensus#consistency-modes,
 	// stale reads are a lot cheaper and are a necessity if you have >5k targets.
 	AllowStale bool `yaml:"allow_stale"`
-	// By default use blocking queries (https://www.consul.io/api/index.html#blocking-queries)
+	// By default use blocking queries (https://developer.hashicorp.com/consul/api-docs/features/blocking)
 	// but allow users to throttle updates if necessary. This can be useful because of "bugs" like
 	// https://github.com/hashicorp/consul/issues/3712 which cause an un-necessary
 	// amount of requests on consul.
 	RefreshInterval model.Duration `yaml:"refresh_interval,omitempty"`
 
-	// See https://www.consul.io/api/catalog.html#list-services
+	// See https://developer.hashicorp.com/consul/api-docs/catalog#list-services
 	// The list of services for which targets are discovered.
 	// Defaults to all services if empty.
 	Services []string `yaml:"services,omitempty"`
