@@ -283,6 +283,10 @@ tagOuter:
 }
 
 // Get the local datacenter if not specified.
+// Note that if Consul ACLs are enabled, this operation requires permissions unrelated
+// to SD: agent:read
+// See https://developer.hashicorp.com/consul/api-docs/agent#read-configuration
+// FIXME It would be a good idea to spell this out in the documentation.
 func (d *Discovery) getDatacenter() error {
 	// If the datacenter was not set from clientConf, let's get it from the local Consul agent
 	// (Consul default is to use local node's datacenter if one isn't given for a query).
@@ -495,6 +499,7 @@ func (d *Discovery) watchService(ctx context.Context, ch chan<- []*targetgroup.G
 }
 
 // Get updates for a service.
+// ACL required: node:read, service:read
 func (srv *consulService) watch(ctx context.Context, ch chan<- []*targetgroup.Group, health *consul.Health, lastIndex *uint64) {
 	level.Debug(srv.logger).Log("msg", "Watching service", "service", srv.name, "tags", strings.Join(srv.tags, ","))
 
