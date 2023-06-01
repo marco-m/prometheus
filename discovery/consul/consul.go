@@ -370,7 +370,7 @@ func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 	}
 }
 
-// Watch the catalog for new services we would like to watch. This is called only
+// Watch the catalog for new services we would like to scrape. This is called only
 // when we don't know yet the names of the services and need to ask Consul the
 // entire list of services.
 func (d *Discovery) watchServices(ctx context.Context, ch chan<- []*targetgroup.Group, lastIndex *uint64, services map[string]func()) {
@@ -388,7 +388,8 @@ func (d *Discovery) watchServices(ctx context.Context, ch chan<- []*targetgroup.
 	elapsed := time.Since(t0)
 	servicesRPCDuration.Observe(elapsed.Seconds())
 
-	// Check the context before in order to exit early.
+	// If a configuration reload is in progress, the discovery manager will send
+	// a cancel; in this case we exit early to avoid logging a misleading error.
 	select {
 	case <-ctx.Done():
 		return
