@@ -345,6 +345,10 @@ func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 
 	if len(d.watchedServices) == 0 || len(d.watchedTags) != 0 {
 		// We need to watch the catalog.
+		level.Debug(d.logger).Log("msg", "Watching catalog",
+			"services", strings.Join(d.watchedServices, ","),
+			"tags", strings.Join(d.watchedTags, ","), "refresh", d.refreshInterval)
+
 		ticker := time.NewTicker(d.refreshInterval)
 
 		// Watched services and their cancellation functions.
@@ -363,6 +367,10 @@ func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 		}
 	} else {
 		// We only have fully defined services.
+		level.Debug(d.logger).Log("msg",
+			"Services defined in configuration file and no tags: not watching catalog",
+			"services", strings.Join(d.watchedServices, ","))
+
 		for _, name := range d.watchedServices {
 			d.watchService(ctx, ch, name)
 		}
@@ -502,7 +510,9 @@ func (d *Discovery) watchService(ctx context.Context, ch chan<- []*targetgroup.G
 // Get updates for a service.
 // ACL required: node:read, service:read
 func (srv *consulService) watch(ctx context.Context, ch chan<- []*targetgroup.Group, health *consul.Health, lastIndex *uint64) {
-	level.Debug(srv.logger).Log("msg", "Watching service", "service", srv.name, "tags", strings.Join(srv.tags, ","))
+	logger := log.With(srv.logger, "service", srv.name,
+		"tags", strings.Join(srv.tags, ","))
+	level.Debug(logger).Log("msg", "Watching service")
 
 	opts := &consul.QueryOptions{
 		WaitIndex:  *lastIndex,
@@ -525,13 +535,14 @@ func (srv *consulService) watch(ctx context.Context, ch chan<- []*targetgroup.Gr
 	}
 
 	if err != nil {
-		level.Error(srv.logger).Log("msg", "Error refreshing service", "service", srv.name, "tags", strings.Join(srv.tags, ","), "err", err)
+		level.Error(logger).Log("msg", "Error refreshing service", "err", err)
 		rpcFailuresCount.Inc()
 		time.Sleep(retryInterval)
 		return
 	}
 	// If the index equals the previous one, the watch timed out with no update.
 	if meta.LastIndex == *lastIndex {
+		level.Debug(logger).Log("msg", "Watch timeout with no update")
 		return
 	}
 	*lastIndex = meta.LastIndex
